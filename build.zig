@@ -31,15 +31,20 @@ pub fn build(b: *std.Build) void {
     run_artifact.step.dependOn(b.getInstallStep());
     run_artifact.addPassthruArgs();
 
-    const lib_tests = b.addTest(.{
-        .root_module = lib_mod,
+    const lib_test_mod = b.createModule(.{
+        .root_source_file = b.path("pkg/ctrlz/test/main.zig"),
+        .target = target,
+        .imports = &.{
+            .{ .name = "ctrlz", .module = lib_mod },
+        },
     });
 
-    const exe_tests = b.addTest(.{
-        .root_module = exe_mod,
+    const exe_test_mod = b.createModule(.{
+        .root_source_file = b.path("cmd/ctrlz/test/main.zig"),
+        .target = target,
     });
 
     const test_step = b.step("test", "run tests");
-    test_step.dependOn(&b.addRunArtifact(lib_tests).step);
-    test_step.dependOn(&b.addRunArtifact(exe_tests).step);
+    test_step.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = lib_test_mod })).step);
+    test_step.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = exe_test_mod })).step);
 }
